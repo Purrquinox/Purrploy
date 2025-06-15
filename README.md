@@ -1,10 +1,10 @@
 # Purrploy
 
-A robust deployment and management script for the Purrploy service using Docker and Docker Swarm.
+A robust deployment and management script for [Dokploy](https://dokploy.com) service using Docker and Docker Swarm.
 
 ## Overview
 
-This script automates the deployment and management of the Purrploy service, handling Docker container orchestration, network configuration, and service management. It provides a simple interface for common operations while ensuring proper setup and security.
+This script automates the deployment and management of Dokploy, handling Docker container orchestration, network configuration, and service management. It provides a simple interface for common operations while ensuring proper setup and security.
 
 ## Features
 
@@ -56,7 +56,7 @@ The `config.yml` file contains all configurable parameters. Key settings include
 ### Network Configuration
 ```yaml
 network:
-  # Internal port for Purrploy service
+  # Internal port for Dokploy service
   port: 3000
   
   # Traefik configuration
@@ -88,8 +88,8 @@ database:
   
   # Internal database settings
   internal:
-    user: "purrploy"
-    name: "purrploy"
+    user: "dokploy"
+    name: "dokploy"
     password: "your_secure_password"
 ```
 
@@ -98,19 +98,19 @@ database:
 ### Basic Commands
 
 ```bash
-# Install Purrploy
+# Install Dokploy
 sudo ./deployer.sh install
 
-# Update Purrploy
+# Update Dokploy
 sudo ./deployer.sh update
 
-# Stop Purrploy
+# Stop Dokploy
 sudo ./deployer.sh stop
 
-# Start Purrploy
+# Start Dokploy
 sudo ./deployer.sh start
 
-# Restart Purrploy
+# Restart Dokploy
 sudo ./deployer.sh restart
 
 # Clean up (remove all containers and volumes)
@@ -205,7 +205,7 @@ Common issues and solutions:
    cp config.yml config.yml.backup
    
    # Backup volumes
-   docker volume ls | grep purrploy
+   docker volume ls | grep dokploy
    ```
 
 ## Contributing
