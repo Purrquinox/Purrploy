@@ -147,6 +147,39 @@ start_dokploy() {
     log_success "All services and containers started"
 }
 
+# Check ports
+check_ports() {
+    local traefik_port=$1
+    local traefik_ssl_port=$2
+    local internal_port=$3
+    local advertise_addr=$4
+    
+    log_info "Checking ports on ${advertise_addr}..."
+    
+    if ! command -v netstat >/dev/null 2>&1; then
+        log_warning "netstat not found, skipping port checks"
+        return 0
+    fi
+    
+    # Check if the specific IP:port combination is in use
+    if netstat -tuln | grep -q "${advertise_addr}:${traefik_port} "; then
+        log_error "Port ${traefik_port} is already in use on ${advertise_addr}"
+        exit 1
+    fi
+    
+    if netstat -tuln | grep -q "${advertise_addr}:${traefik_ssl_port} "; then
+        log_error "Port ${traefik_ssl_port} is already in use on ${advertise_addr}"
+        exit 1
+    fi
+    
+    if netstat -tuln | grep -q "${advertise_addr}:${internal_port} "; then
+        log_error "Port ${internal_port} is already in use on ${advertise_addr}"
+        exit 1
+    fi
+    
+    log_success "All required ports are available on ${advertise_addr}"
+}
+
 # Install Dokploy function
 install_dokploy() {
     # Validate environment
@@ -155,7 +188,7 @@ install_dokploy() {
     validate_not_container
     
     # Check ports
-    check_ports "${TRAEFIK_PORT}" "${TRAEFIK_SSL_PORT}" "${PORT}"
+    check_ports "${TRAEFIK_PORT}" "${TRAEFIK_SSL_PORT}" "${PORT}" "${ADVERTISE_ADDR}"
     
     # Install Docker
     install_docker
