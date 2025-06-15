@@ -11,8 +11,8 @@ network:
     ssl_port: 443
   
   # The IP address that Traefik will bind to
-  # This should be your server's public IP address
-  # It can also be 0.0.0.0 for all interfaces
+  # This should be your server's public IP address (eg. 192.168.1.100)
+  # It can also be 0.0.0.0 for all interfaces if you do not want dokploy on the host network with its own IP
   advertise_addr: "0.0.0.0"
 
 # Docker Configuration

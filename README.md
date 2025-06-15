@@ -1,10 +1,10 @@
 # Purrploy
 
-A robust deployment and management script for the Dokploy service using Docker and Docker Swarm.
+A robust deployment and management script for the Purrploy service using Docker and Docker Swarm.
 
 ## Overview
 
-This script automates the deployment and management of the Dokploy service, handling Docker container orchestration, network configuration, and service management. It provides a simple interface for common operations while ensuring proper setup and security.
+This script automates the deployment and management of the Purrploy service, handling Docker container orchestration, network configuration, and service management. It provides a simple interface for common operations while ensuring proper setup and security.
 
 ## Features
 
@@ -28,27 +28,23 @@ This script automates the deployment and management of the Dokploy service, hand
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/dokploy-deployer.git
-   cd dokploy-deployer
+   git clone https://github.com/Purrquinox/Purrploy.git
+   cd purrploy
    ```
 
-2. Set up the directory structure:
+2. Set permissions for all scripts:
    ```bash
-   sudo mkdir -p /scripts/bytepurr/{lib,utils}
-   ```
-
-3. Set permissions:
-   ```bash
-   sudo chown -R $USER:$USER /scripts/bytepurr
    chmod +x deployer.sh
+   chmod +x lib/*.sh
+   chmod +x utils/*.sh
    ```
 
-4. Copy the example configuration:
+3. Copy the example configuration:
    ```bash
    cp config.example.yml config.yml
    ```
 
-5. Edit the configuration file:
+4. Edit the configuration file:
    ```bash
    nano config.yml
    ```
@@ -60,7 +56,7 @@ The `config.yml` file contains all configurable parameters. Key settings include
 ### Network Configuration
 ```yaml
 network:
-  # Internal port for Dokploy service
+  # Internal port for Purrploy service
   port: 3000
   
   # Traefik configuration
@@ -70,8 +66,8 @@ network:
   
   # IP binding for Traefik
   # Options:
-  # - Specific IP (e.g., "70.35.199.91")
-  # - All interfaces ("0.0.0.0")
+  # - Specific IP (e.g., "192.168.1.100") - Uses host networking
+  # - "0.0.0.0" or empty - Uses overlay network for all interfaces
   advertise_addr: "0.0.0.0"
 ```
 
@@ -92,8 +88,8 @@ database:
   
   # Internal database settings
   internal:
-    user: "dokploy"
-    name: "dokploy"
+    user: "purrploy"
+    name: "purrploy"
     password: "your_secure_password"
 ```
 
@@ -102,19 +98,19 @@ database:
 ### Basic Commands
 
 ```bash
-# Install Dokploy
+# Install Purrploy
 sudo ./deployer.sh install
 
-# Update Dokploy
+# Update Purrploy
 sudo ./deployer.sh update
 
-# Stop Dokploy
+# Stop Purrploy
 sudo ./deployer.sh stop
 
-# Start Dokploy
+# Start Purrploy
 sudo ./deployer.sh start
 
-# Restart Dokploy
+# Restart Purrploy
 sudo ./deployer.sh restart
 
 # Clean up (remove all containers and volumes)
@@ -129,12 +125,12 @@ sudo ./deployer.sh reinstall
 The script supports flexible Traefik configuration:
 
 1. **IP Binding**:
-   - Bind to a specific IP (e.g., "70.35.199.91"):
+   - Bind to a specific IP (e.g., "192.168.1.100"):
      - Uses host networking mode
      - Direct port binding to the specified IP
      - Optimal for single-interface deployments
-   - Bind to all interfaces ("0.0.0.0"):
-     - Uses the `dokploy-network` overlay network
+   - Bind to all interfaces (set `advertise_addr` to "0.0.0.0" or leave empty):
+     - Uses the `purrploy-network` overlay network
      - Allows access from any network interface
      - Better for multi-interface or complex network setups
 
@@ -144,14 +140,14 @@ The script supports flexible Traefik configuration:
 
 3. **Network Mode**:
    - Specific IP: Uses host networking for direct port binding
-   - All Interfaces: Uses `dokploy-network` overlay network for flexible access
+   - All Interfaces: Uses `purrploy-network` overlay network for flexible access
 
 ## Architecture
 
 The script is organized into several components:
 
 ```
-dokploy-deployer/
+purrploy/
 ├── deployer.sh           # Main deployment script
 ├── config.yml           # Configuration file
 ├── config.example.yml   # Example configuration
@@ -209,7 +205,7 @@ Common issues and solutions:
    cp config.yml config.yml.backup
    
    # Backup volumes
-   docker volume ls | grep dokploy
+   docker volume ls | grep purrploy
    ```
 
 ## Contributing
