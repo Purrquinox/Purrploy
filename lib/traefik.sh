@@ -12,7 +12,7 @@ deploy_traefik() {
     docker run -d \
         --name "${TRAEFIK_CONTAINER}" \
         --network "${NETWORK_NAME}" \
-        --restart unless-stopped \
+        --restart always \
         -v "${TRAEFIK_CONFIG_PATH}:/etc/traefik/traefik.yml" \
         -v "${TRAEFIK_DYNAMIC_PATH}:/etc/dokploy/traefik/dynamic" \
         -v "${DOCKER_SOCK_PATH}:/var/run/docker.sock" \
