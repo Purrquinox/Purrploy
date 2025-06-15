@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Source utility functions
+source utils/yaml.sh
+source utils/error_handling.sh
+
+# Source library functions
+source lib/logging.sh
+source lib/docker.sh
+source lib/network.sh
+source lib/database.sh
+source lib/redis.sh
+source lib/traefik.sh
+
 # Configuration file
 CONFIG_FILE="config.yml"
 

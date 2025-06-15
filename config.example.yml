@@ -11,8 +11,9 @@ network:
     ssl_port: 443
   
   # The IP address that Traefik will bind to
-  # This should be your server's public IP address (eg. 192.168.1.100)
-  # It can also be 0.0.0.0 for all interfaces if you do not want dokploy on the host network with its own IP
+  # Options:
+  # - Specific IP (e.g., "192.168.1.100") - Uses host networking
+  # - "0.0.0.0" or empty - Uses overlay network for all interfaces
   advertise_addr: "0.0.0.0"
 
 # Docker Configuration
@@ -50,32 +51,25 @@ redis:
 
 # File Paths
 paths:
-  # Path to Traefik configuration
-  traefik_config: "/etc/dokploy/traefik"
-  # Path to Docker socket
-  docker_socket: "/var/run/docker.sock"
+  traefik:
+    config: "/etc/dokploy/traefik/traefik.yml"
+    dynamic: "/etc/dokploy/traefik/dynamic"
+    docker_sock: "/var/run/docker.sock"
+    docker_config: "/root/.docker"
 
 # Container Names
 containers:
-  # Name of the Dokploy service container
-  dokploy: "dokploy"
-  # Name of the Traefik container
   traefik: "dokploy-traefik"
-  # Name of the PostgreSQL container
   postgres: "dokploy-postgres"
-  # Name of the Redis container
   redis: "dokploy-redis"
+  main: "dokploy"
 
 # Network Names
 networks:
-  # Name of the overlay network
   overlay: "dokploy-network"
 
 # Volume Names
 volumes:
-  # Name of the PostgreSQL data volume
-  postgres: "dokploy-postgres-data"
-  # Name of the Redis data volume
-  redis: "dokploy-redis-data"
-  # Name of the Docker configuration volume
+  postgres: "dokploy-postgres-database"
+  redis: "redis-data-volume"
   docker_config: "dokploy-docker-config" 
