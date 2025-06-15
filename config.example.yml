@@ -1,0 +1,81 @@
+# Network Configuration
+network:
+  # The port that Dokploy will listen on internally
+  port: 3000
+  
+  # Traefik port configuration
+  traefik:
+    # HTTP port
+    port: 80
+    # HTTPS port
+    ssl_port: 443
+  
+  # The IP address that Traefik will bind to
+  # This should be your server's public IP address
+  # It can also be 0.0.0.0 for all interfaces
+  advertise_addr: "0.0.0.0"
+
+# Docker Configuration
+docker:
+  # The release tag for the Dokploy service
+  release_tag: "latest"
+  
+  # Version of Traefik to use
+  traefik_version: "v3.1.2"
+  
+  # Version of PostgreSQL to use
+  postgres_version: "16"
+  
+  # Version of Redis to use
+  redis_version: "7"
+
+# Database Configuration
+database:
+  # External database URL (leave empty to use internal database)
+  url: ""
+  
+  # Internal database configuration
+  internal:
+    # Database user
+    user: "dokploy"
+    # Database name
+    name: "dokploy"
+    # Database password (change this in production!)
+    password: "your_secure_password"
+
+# Redis Configuration
+redis:
+  # External Redis host (leave empty to use internal Redis)
+  host: ""
+
+# File Paths
+paths:
+  # Path to Traefik configuration
+  traefik_config: "/etc/dokploy/traefik"
+  # Path to Docker socket
+  docker_socket: "/var/run/docker.sock"
+
+# Container Names
+containers:
+  # Name of the Dokploy service container
+  dokploy: "dokploy"
+  # Name of the Traefik container
+  traefik: "dokploy-traefik"
+  # Name of the PostgreSQL container
+  postgres: "dokploy-postgres"
+  # Name of the Redis container
+  redis: "dokploy-redis"
+
+# Network Names
+networks:
+  # Name of the overlay network
+  overlay: "dokploy-network"
+
+# Volume Names
+volumes:
+  # Name of the PostgreSQL data volume
+  postgres: "dokploy-postgres-data"
+  # Name of the Redis data volume
+  redis: "dokploy-redis-data"
+  # Name of the Docker configuration volume
+  docker_config: "dokploy-docker-config" 
