@@ -16,11 +16,7 @@ source lib/traefik.sh
 CONFIG_FILE="config.yml"
 
 # Load configuration
-if [ -f "$CONFIG_FILE" ]; then
-    eval $(parse_yaml "$CONFIG_FILE")
-else
-    echo "Configuration file not found. Using default values."
-fi
+load_config "$CONFIG_FILE"
 
 # Default values
 PORT="${PORT:-3000}"
