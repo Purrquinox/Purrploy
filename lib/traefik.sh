@@ -15,9 +15,9 @@ deploy_traefik() {
     cat > "${TRAEFIK_BASE_PATH}/traefik.yml" << EOF
 entryPoints:
   web:
-    address: "${ADVERTISE_ADDR}:${TRAEFIK_PORT}"
+    address: ":${TRAEFIK_PORT}"
   websecure:
-    address: "${ADVERTISE_ADDR}:${TRAEFIK_SSL_PORT}"
+    address: ":${TRAEFIK_SSL_PORT}"
     http:
       tls:
         certResolver: letsencrypt
@@ -34,7 +34,7 @@ providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
-    network: "${NETWORK_NAME}"
+    network: host
     watch: true
 
 api:

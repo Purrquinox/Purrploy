@@ -169,15 +169,10 @@ validate_environment() {
         exit 1
     fi
     
-    # Check ports
-    if [ -n "${ADVERTISE_ADDR}" ]; then
-        # If ADVERTISE_ADDR is set, check ports on that specific IP
-        check_port "${TRAEFIK_PORT}" "${ADVERTISE_ADDR}" || exit 1
-        check_port "${TRAEFIK_SSL_PORT}" "${ADVERTISE_ADDR}" || exit 1
-    else
-        # If no ADVERTISE_ADDR, check ports on all interfaces
-        check_port "${TRAEFIK_PORT}" "" || exit 1
-        check_port "${TRAEFIK_SSL_PORT}" "" || exit 1
+    # Check if ADVERTISE_ADDR is set
+    if [ -z "${ADVERTISE_ADDR}" ]; then
+        log_error "ADVERTISE_ADDR must be set in config.yml"
+        exit 1
     fi
     
     log_success "Environment validation passed"
@@ -187,9 +182,6 @@ validate_environment() {
 install_dokploy() {
     # Validate environment
     validate_environment
-    
-    # Check ports
-    check_ports "${TRAEFIK_PORT}" "${TRAEFIK_SSL_PORT}" "${PORT}" "${ADVERTISE_ADDR}"
     
     # Install Docker
     install_docker
