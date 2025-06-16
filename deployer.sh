@@ -82,26 +82,10 @@ handle_error() {
 cleanup_existing() {
     log_step "Cleaning up existing installation..."
     
-    # Stop and remove Dokploy service if it exists
-    if docker service ls | grep -q "dokploy"; then
-        log_info "Stopping Dokploy service..."
-        docker service rm dokploy
-        sleep 2
-    fi
-    
-    # Stop and remove Postgres service if it exists
-    if docker service ls | grep -q "dokploy-postgres"; then
-        log_info "Stopping Postgres service..."
-        docker service rm dokploy-postgres
-        sleep 2
-    fi
-    
-    # Stop and remove Redis service if it exists
-    if docker service ls | grep -q "dokploy-redis"; then
-        log_info "Stopping Redis service..."
-        docker service rm dokploy-redis
-        sleep 2
-    fi
+    # Stop and remove services
+    remove_service "dokploy"
+    remove_service "dokploy-postgres"
+    remove_service "dokploy-redis"
     
     # Stop and remove Traefik container
     stop_traefik
@@ -117,6 +101,7 @@ cleanup_existing() {
     if docker info | grep -q "Swarm: active"; then
         log_info "Leaving Docker Swarm..."
         docker swarm leave --force
+        sleep 2
     fi
     
     log_success "Cleanup completed"
@@ -125,12 +110,7 @@ cleanup_existing() {
 # Stop Dokploy
 stop_dokploy() {
     log_info "Stopping Dokploy service..."
-    if docker service ls | grep -q "dokploy"; then
-        docker service rm dokploy
-        log_success "Stopped Dokploy service"
-    else
-        log_warning "Dokploy service not found"
-    fi
+    remove_service "dokploy"
 }
 
 # Start Dokploy
@@ -141,8 +121,7 @@ start_dokploy() {
         exit 1
     fi
     
-    docker service scale dokploy=1
-    log_success "Started Dokploy service"
+    scale_service "dokploy" 1
 }
 
 # Check if port is in use on specific IP
@@ -200,10 +179,6 @@ install_dokploy() {
     # Install Docker
     install_docker
     
-    # Leave existing swarm
-    log_step "Preparing Docker Swarm..."
-    docker swarm leave --force 2>/dev/null && log_warning "Left existing swarm" || log_info "No existing swarm to leave"
-    
     # Clean up existing installation
     cleanup_existing
     
@@ -218,23 +193,14 @@ install_dokploy() {
     
     # Setup database
     if [ -z "${DATABASE_URL}" ]; then
-        create_service "dokploy-postgres" "postgres:${POSTGRES_VERSION}" \
-            --constraint 'node.role==manager' \
-            --network "${NETWORK_NAME}" \
-            --env "POSTGRES_USER=${DB_USER}" \
-            --env "POSTGRES_DB=${DB_NAME}" \
-            --env "POSTGRES_PASSWORD=${DB_PASSWORD}" \
-            --mount "type=volume,source=${POSTGRES_VOLUME},target=/var/lib/postgresql/data"
+        create_postgres_service "dokploy-postgres" "postgres:${POSTGRES_VERSION}" "${DB_USER}" "${DB_NAME}" "${DB_PASSWORD}" "${POSTGRES_VOLUME}" "${NETWORK_NAME}"
     else
         log_info "Using external database: ${DATABASE_URL%@*}@***"
     fi
     
     # Setup Redis
     if [ -z "${REDIS_HOST}" ]; then
-        create_service "dokploy-redis" "redis:${REDIS_VERSION}" \
-            --constraint 'node.role==manager' \
-            --network "${NETWORK_NAME}" \
-            --mount "type=volume,source=${REDIS_VOLUME},target=/data"
+        create_redis_service "dokploy-redis" "redis:${REDIS_VERSION}" "${REDIS_VOLUME}" "${NETWORK_NAME}"
     else
         log_info "Using external Redis: ${REDIS_HOST}"
     fi
