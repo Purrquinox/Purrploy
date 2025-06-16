@@ -129,13 +129,21 @@ check_port() {
     local port="$1"
     local ip="$2"
     
-    # Check if port is in use on the specific IP
-    if ss -tuln | grep -q "${ip}:${port}"; then
-        log_error "Port ${port} is already in use on ${ip}"
-        return 1
+    # If no IP specified, check all interfaces
+    if [ -z "$ip" ]; then
+        if ss -tuln | grep -q ":${port} "; then
+            log_error "Port ${port} is already in use on any interface"
+            return 1
+        fi
+    else
+        # Check specific IP
+        if ss -tuln | grep -q "${ip}:${port}"; then
+            log_error "Port ${port} is already in use on ${ip}"
+            return 1
+        fi
     fi
     
-    log_success "Port ${port} is available on ${ip}"
+    log_success "Port ${port} is available${ip:+ on ${ip}}"
     return 0
 }
 
@@ -161,9 +169,16 @@ validate_environment() {
         exit 1
     fi
     
-    # Check ports on specific IP
-    check_port "${TRAEFIK_PORT}" "${ADVERTISE_ADDR}" || exit 1
-    check_port "${TRAEFIK_SSL_PORT}" "${ADVERTISE_ADDR}" || exit 1
+    # Check ports
+    if [ -n "${ADVERTISE_ADDR}" ]; then
+        # If ADVERTISE_ADDR is set, check ports on that specific IP
+        check_port "${TRAEFIK_PORT}" "${ADVERTISE_ADDR}" || exit 1
+        check_port "${TRAEFIK_SSL_PORT}" "${ADVERTISE_ADDR}" || exit 1
+    else
+        # If no ADVERTISE_ADDR, check ports on all interfaces
+        check_port "${TRAEFIK_PORT}" "" || exit 1
+        check_port "${TRAEFIK_SSL_PORT}" "" || exit 1
+    fi
     
     log_success "Environment validation passed"
 }
@@ -210,7 +225,7 @@ install_dokploy() {
     
     # Deploy Dokploy
     create_service "dokploy" "dokploy/dokploy:${RELEASE_TAG}" \
-        --network "${NETWORK_NAME}" \
+        --network host \
         --mount "type=bind,source=${DOCKER_SOCK_PATH},target=/var/run/docker.sock" \
         --mount "type=bind,source=${TRAEFIK_BASE_PATH},target=/etc/dokploy" \
         --mount "type=volume,source=${DOCKER_CONFIG_VOLUME},target=/root/.docker" \

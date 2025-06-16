@@ -4,25 +4,59 @@
 deploy_traefik() {
     log_step "Deploying Traefik..."
     
-    # Create necessary directories
-    mkdir -p "${TRAEFIK_DYNAMIC_PATH}"
-    chmod -R 777 "${TRAEFIK_BASE_PATH}"
+    # Stop and remove existing Traefik container if it exists
+    stop_traefik
+    remove_traefik
     
-    # Run Traefik container
+    # Create Traefik configuration directory
+    mkdir -p "${TRAEFIK_BASE_PATH}"
+    
+    # Create Traefik configuration
+    cat > "${TRAEFIK_BASE_PATH}/traefik.yml" << EOF
+entryPoints:
+  web:
+    address: "${ADVERTISE_ADDR}:${TRAEFIK_PORT}"
+  websecure:
+    address: "${ADVERTISE_ADDR}:${TRAEFIK_SSL_PORT}"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "${ACME_EMAIL}"
+      storage: /etc/dokploy/acme.json
+      httpChallenge:
+        entryPoint: web
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: "${NETWORK_NAME}"
+    watch: true
+
+api:
+  dashboard: true
+  insecure: true
+
+log:
+  level: INFO
+EOF
+    
+    # Deploy Traefik container
     docker run -d \
-        --name "${TRAEFIK_CONTAINER}" \
-        --network "${NETWORK_NAME}" \
+        --name traefik \
+        --network host \
         --restart always \
-        -v "${TRAEFIK_CONFIG_PATH}:/etc/traefik/traefik.yml" \
-        -v "${TRAEFIK_DYNAMIC_PATH}:/etc/dokploy/traefik/dynamic" \
-        -v "${DOCKER_SOCK_PATH}:/var/run/docker.sock" \
-        -p "${ADVERTISE_ADDR}:${TRAEFIK_PORT}:80" \
-        -p "${ADVERTISE_ADDR}:${TRAEFIK_SSL_PORT}:443" \
-        -p "${ADVERTISE_ADDR}:${TRAEFIK_SSL_PORT}:443/udp" \
-        "traefik:${TRAEFIK_VERSION}"
+        -v /var/run/docker.sock:/var/run/docker.sock:ro \
+        -v "${TRAEFIK_BASE_PATH}":/etc/dokploy \
+        traefik:v2.10 \
+        --configFile=/etc/dokploy/traefik.yml
     
-    handle_error $? "Failed to start Traefik container"
-    log_success "Traefik container started successfully with IP bindings to ${ADVERTISE_ADDR} for ports 80 and 443"
+    handle_error $? "Failed to deploy Traefik"
+    log_success "Traefik deployed successfully"
 }
 
 # Stop Traefik
