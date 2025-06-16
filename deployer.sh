@@ -78,73 +78,71 @@ handle_error() {
     fi
 }
 
-# Cleanup function
+# Cleanup existing installation
 cleanup_existing() {
-    log_step "Cleaning up existing Dokploy installation..."
+    log_step "Cleaning up existing installation..."
     
-    # Stop and remove Traefik
+    # Stop and remove Dokploy service if it exists
+    if docker service ls | grep -q "dokploy"; then
+        log_info "Stopping Dokploy service..."
+        docker service rm dokploy
+        sleep 2
+    fi
+    
+    # Stop and remove Postgres service if it exists
+    if docker service ls | grep -q "dokploy-postgres"; then
+        log_info "Stopping Postgres service..."
+        docker service rm dokploy-postgres
+        sleep 2
+    fi
+    
+    # Stop and remove Redis service if it exists
+    if docker service ls | grep -q "dokploy-redis"; then
+        log_info "Stopping Redis service..."
+        docker service rm dokploy-redis
+        sleep 2
+    fi
+    
+    # Stop and remove Traefik container
     stop_traefik
     remove_traefik
     
-    # Scale down and remove services
-    scale_service "dokploy" 0
-    scale_service "dokploy-postgres" 0
-    scale_service "dokploy-redis" 0
+    # Remove network if it exists
+    if docker network ls | grep -q "${NETWORK_NAME}"; then
+        log_info "Removing Docker network..."
+        docker network rm "${NETWORK_NAME}" 2>/dev/null && log_success "Removed ${NETWORK_NAME}" || log_warning "${NETWORK_NAME} network did not exist"
+    fi
     
-    # Wait for replicas to stop
-    log_info "Waiting for replicas to stop..."
-    sleep 3
-    
-    # Remove services
-    remove_service "dokploy"
-    remove_service "dokploy-postgres"
-    remove_service "dokploy-redis"
-    
-    # Force remove any remaining containers
-    log_info "Cleaning up any remaining Dokploy containers..."
-    docker ps -a --filter "label=com.docker.swarm.service.name=dokploy" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
-    docker ps -a --filter "label=com.docker.swarm.service.name=dokploy-postgres" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
-    docker ps -a --filter "label=com.docker.swarm.service.name=dokploy-redis" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
-    
-    # Remove networks
-    log_info "Removing Docker networks..."
-    docker network rm "${NETWORK_NAME}" 2>/dev/null && log_success "Removed ${NETWORK_NAME}" || log_warning "${NETWORK_NAME} did not exist"
-    
-    # Wait for cleanup to complete
-    log_info "Waiting for cleanup to complete..."
-    sleep 5
+    # Leave swarm if we're in one
+    if docker info | grep -q "Swarm: active"; then
+        log_info "Leaving Docker Swarm..."
+        docker swarm leave --force
+    fi
     
     log_success "Cleanup completed"
 }
 
-# Stop Dokploy function
+# Stop Dokploy
 stop_dokploy() {
-    log_step "Stopping Dokploy services and containers..."
-    
-    # Stop Traefik
-    stop_traefik
-    
-    # Stop services
-    scale_service "dokploy" 0
-    scale_service "dokploy-postgres" 0
-    scale_service "dokploy-redis" 0
-    
-    log_success "All services and containers stopped"
+    log_info "Stopping Dokploy service..."
+    if docker service ls | grep -q "dokploy"; then
+        docker service rm dokploy
+        log_success "Stopped Dokploy service"
+    else
+        log_warning "Dokploy service not found"
+    fi
 }
 
-# Start Dokploy function
+# Start Dokploy
 start_dokploy() {
-    log_step "Starting Dokploy services and containers..."
+    log_info "Starting Dokploy service..."
+    if ! docker service ls | grep -q "dokploy"; then
+        log_error "Dokploy service not found. Please run install first."
+        exit 1
+    fi
     
-    # Start services
-    scale_service "dokploy-postgres" 1
-    scale_service "dokploy-redis" 1
-    scale_service "dokploy" 1
-    
-    # Start Traefik
-    start_traefik
-    
-    log_success "All services and containers started"
+    docker service scale dokploy=1
+    log_success "Started Dokploy service"
 }
 
 # Check ports
