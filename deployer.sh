@@ -145,45 +145,54 @@ start_dokploy() {
     log_success "Started Dokploy service"
 }
 
-# Check ports
-check_ports() {
-    local traefik_port=$1
-    local traefik_ssl_port=$2
-    local internal_port=$3
-    local advertise_addr=$4
+# Check if port is in use on specific IP
+check_port() {
+    local port="$1"
+    local ip="$2"
     
-    log_info "Checking ports on ${advertise_addr}..."
-    
-    if ! command -v netstat >/dev/null 2>&1; then
-        log_warning "netstat not found, skipping port checks"
-        return 0
+    # Check if port is in use on the specific IP
+    if ss -tuln | grep -q "${ip}:${port}"; then
+        log_error "Port ${port} is already in use on ${ip}"
+        return 1
     fi
     
-    # Check if the specific IP:port combination is in use
-    if netstat -tuln | grep -q "${advertise_addr}:${traefik_port} "; then
-        log_error "Port ${traefik_port} is already in use on ${advertise_addr}"
+    log_success "Port ${port} is available on ${ip}"
+    return 0
+}
+
+# Validate environment
+validate_environment() {
+    log_step "Validating environment..."
+    
+    # Check if running as root
+    if [ "$(id -u)" != "0" ]; then
+        log_error "This script must be run as root"
         exit 1
     fi
     
-    if netstat -tuln | grep -q "${advertise_addr}:${traefik_ssl_port} "; then
-        log_error "Port ${traefik_ssl_port} is already in use on ${advertise_addr}"
+    # Check if running on Linux
+    if [ "$(uname)" != "Linux" ]; then
+        log_error "This script must be run on Linux"
         exit 1
     fi
     
-    if netstat -tuln | grep -q "${advertise_addr}:${internal_port} "; then
-        log_error "Port ${internal_port} is already in use on ${advertise_addr}"
+    # Check if running inside a container
+    if [ -f /.dockerenv ]; then
+        log_error "This script must be run on the host system"
         exit 1
     fi
     
-    log_success "All required ports are available on ${advertise_addr}"
+    # Check ports on specific IP
+    check_port "${TRAEFIK_PORT}" "${ADVERTISE_ADDR}" || exit 1
+    check_port "${TRAEFIK_SSL_PORT}" "${ADVERTISE_ADDR}" || exit 1
+    
+    log_success "Environment validation passed"
 }
 
 # Install Dokploy function
 install_dokploy() {
     # Validate environment
-    validate_root
-    validate_linux
-    validate_not_container
+    validate_environment
     
     # Check ports
     check_ports "${TRAEFIK_PORT}" "${TRAEFIK_SSL_PORT}" "${PORT}" "${ADVERTISE_ADDR}"
