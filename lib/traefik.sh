@@ -15,9 +15,9 @@ deploy_traefik() {
     cat > "${TRAEFIK_BASE_PATH}/traefik.yml" << EOF
 entryPoints:
   web:
-    address: ":${TRAEFIK_PORT}"
+    address: "${ADVERTISE_ADDR}:${TRAEFIK_PORT}"
   websecure:
-    address: ":${TRAEFIK_SSL_PORT}"
+    address: "${ADVERTISE_ADDR}:${TRAEFIK_SSL_PORT}"
     http:
       tls:
         certResolver: letsencrypt
@@ -47,12 +47,12 @@ EOF
     
     # Deploy Traefik container
     docker run -d \
-        --name traefik \
+        --name "${CONFIG_containers_traefik}" \
         --network host \
         --restart always \
         -v /var/run/docker.sock:/var/run/docker.sock:ro \
         -v "${TRAEFIK_BASE_PATH}":/etc/dokploy \
-        traefik:v2.10 \
+        "traefik:${CONFIG_docker_traefik_version}" \
         --configFile=/etc/dokploy/traefik.yml
     
     handle_error $? "Failed to deploy Traefik"
@@ -62,17 +62,17 @@ EOF
 # Stop Traefik
 stop_traefik() {
     log_info "Stopping Traefik container..."
-    docker stop "${TRAEFIK_CONTAINER}" 2>/dev/null && log_success "Stopped ${TRAEFIK_CONTAINER}" || log_warning "${TRAEFIK_CONTAINER} was not running"
+    docker stop "${CONFIG_containers_traefik}" 2>/dev/null && log_success "Stopped ${CONFIG_containers_traefik}" || log_warning "${CONFIG_containers_traefik} was not running"
 }
 
 # Remove Traefik
 remove_traefik() {
     log_info "Removing Traefik container..."
-    docker rm "${TRAEFIK_CONTAINER}" 2>/dev/null && log_success "Removed ${TRAEFIK_CONTAINER}" || log_warning "${TRAEFIK_CONTAINER} container did not exist"
+    docker rm "${CONFIG_containers_traefik}" 2>/dev/null && log_success "Removed ${CONFIG_containers_traefik}" || log_warning "${CONFIG_containers_traefik} container did not exist"
 }
 
 # Start Traefik
 start_traefik() {
     log_info "Starting Traefik container..."
-    docker start "${TRAEFIK_CONTAINER}" 2>/dev/null && log_success "Started ${TRAEFIK_CONTAINER}" || log_warning "${TRAEFIK_CONTAINER} container not found"
+    docker start "${CONFIG_containers_traefik}" 2>/dev/null && log_success "Started ${CONFIG_containers_traefik}" || log_warning "${CONFIG_containers_traefik} container not found"
 } 
